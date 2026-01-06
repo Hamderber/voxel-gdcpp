@@ -1,8 +1,17 @@
 {
   "explorer.autoReveal": false,
+  "[cpp]": {
+    "editor.semanticHighlighting.enabled": false
+  },
+  "editor.semanticTokenColorCustomizations": {
+    "rules": {
+      "keyword": "#569CD6",
+      "type": "#569CD6"
+    }
+  },
   "files.exclude": {
-    ".zed":true,
-    "*.pdb":true,
+    ".zed": true,
+    "*.pdb": true,
     "src/**/*.o": true,
     "src/**/*.os": true,
     "src/**/*.so": true,
@@ -34,7 +43,6 @@
     "src/**/*.mod": true,
     "src/**/*.sav": true,
     "src/**/*.d": true,
-
     "include/**/*.o": true,
     "include/**/*.os": true,
     "include/**/*.so": true,
@@ -66,13 +74,12 @@
     "include/**/*.mod": true,
     "include/**/*.sav": true,
     "include/**/*.d": true,
-
     ".cache": true,
     "__pycache__": true,
     "gen": true,
-    "bin":true,
-    "test_project":true,
-    "tools":true,
+    "bin": true,
+    "test_project": true,
+    "tools": true,
     ".clang-format": true,
     ".editorconfig": true,
     ".gdignore": true,
@@ -80,19 +87,22 @@
     ".gitmodules": true,
     ".sconsign.dblite": true,
     "compile_commands.json": true,
-    "methods.py":true,
-    "2d_build_profile.json":true,
-    "3d_build_profile.json":true,
-    "build_profile.json":true,
-    "dont_touch.txt":true,
-    "LICENSE":true,
-    "README.md":true,
-    "SConstruct":true,
-    ".gitignore":true,
-    ".github":true,
-    "godot-cpp":true,
-    "setup.py":false
-},
+    "methods.py": true,
+    "2d_build_profile.json": true,
+    "3d_build_profile.json": true,
+    "build_profile.json": true,
+    "dont_touch.txt": true,
+    "LICENSE": true,
+    "README.md": false,
+    "SConstruct": true,
+    ".gitignore": true,
+    ".github": true,
+    "godot-cpp": true,
+    "setup.py": false
+  },
   "files.eol": "\n",
-  "files.insertFinalNewline": true
+  "files.insertFinalNewline": true,
+  "css.format.braceStyle": "expand",
+  "less.format.braceStyle": "expand",
+  "scss.format.braceStyle": "expand"
 }

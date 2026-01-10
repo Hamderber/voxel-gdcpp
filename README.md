@@ -8,6 +8,8 @@ GDExtension that contains all game logic for the Voxel Godot Cpp project
 | - | - | - |
 | Language | C++ 17 | <https://www.learncpp.com/> |
 | Compiler | SCons 4.1.10.x | <https://scons.org/> |
+| Engine | Godot 4.5 | <https://godotengine.org/> |
+| C++ Lib | fmt 12.1.0 | <https://github.com/fmtlib/fmt> |
 
 ## Credit and useful resources
 

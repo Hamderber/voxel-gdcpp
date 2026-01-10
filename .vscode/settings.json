@@ -1,7 +1,7 @@
 {
   "explorer.autoReveal": false,
   "[cpp]": {
-    "editor.semanticHighlighting.enabled": false
+    "editor.semanticHighlighting.enabled": true
   },
   "editor.semanticTokenColorCustomizations": {
     "rules": {
@@ -9,6 +9,10 @@
       "type": "#569CD6"
     }
   },
+  "clangd.arguments": [
+    "--function-arg-placeholders=0"
+  ],
+  "editor.inlayHints.enabled": "off",
   "files.exclude": {
     ".zed": true,
     "*.pdb": true,

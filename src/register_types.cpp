@@ -1,6 +1,7 @@
 #include "hpp/core/voxelgdcpp.hpp"
 #include "hpp/voxel/chunk.hpp"
 #include "hpp/voxel/resource/generation_settings.hpp"
+#include "hpp/voxel/resource/pallet.hpp"
 #include "hpp/voxel/world.hpp"
 
 #include <gdextension_interface.h>
@@ -19,11 +20,10 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 
     GDREGISTER_CLASS(VoxelGDCPP)
 
-    // GDREGISTER_CLASS(Voxel::Chunk)
     ClassDB::register_class<Voxel::Chunk>();
-    // GDREGISTER_CLASS(Voxel::World)
     ClassDB::register_class<Voxel::World>();
-    // GDREGISTER_CLASS(Voxel::Resource::GenerationSettings)
+
+    ClassDB::register_class<Voxel::Resource::Pallet>();
     ClassDB::register_class<Voxel::Resource::GenerationSettings>();
 }
 

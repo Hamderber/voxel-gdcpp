@@ -7,7 +7,6 @@
 #include "godot_cpp/variant/vector3i.hpp"
 #include "hpp/tools/hash.hpp"
 #include "hpp/tools/log.hpp"
-#include "hpp/tools/material.hpp"
 #include "hpp/voxel/constants.hpp"
 #include <cstdint>
 
@@ -17,7 +16,7 @@ namespace Voxel
 {
     void World::_ready()
     {
-        Tools::Material::EnsureDefaultMaterial(m_material, "World");
+        default_pallet();
         default_generation_settings();
         set_generation_rng();
         build_debounce_timer();
@@ -57,10 +56,10 @@ namespace Voxel
         ADD_PROPERTY(godot::PropertyInfo(godot::Variant::INT, "radius", godot::PROPERTY_HINT_RANGE, "1,10"),
                      "set_spawn_radius", "get_spawn_radius");
 
-        ClassDB::bind_method(D_METHOD("get_material"), &World::get_material);
-        ClassDB::bind_method(D_METHOD("set_material", "m"), &World::set_material);
-        ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "voxel_material", PROPERTY_HINT_RESOURCE_TYPE, "material"),
-                     "set_material", "get_material");
+        ClassDB::bind_method(D_METHOD("get_pallet"), &World::get_pallet);
+        ClassDB::bind_method(D_METHOD("set_pallet", "p"), &World::set_pallet);
+        ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "pallet", PROPERTY_HINT_RESOURCE_TYPE, "Pallet"),
+                     "set_pallet", "get_pallet");
 
         ClassDB::bind_method(D_METHOD("get_settings"), &World::get_settings);
         ClassDB::bind_method(D_METHOD("set_settings", "g"), &World::set_settings);
@@ -84,6 +83,15 @@ namespace Voxel
     {
         m_pDebounceTimer->stop();
         m_pDebounceTimer->start();
+    }
+
+    void World::default_pallet()
+    {
+        if (m_pallet.is_valid())
+            return;
+
+        m_pallet.instantiate();
+        m_pallet->default_pallet();
     }
 
     void World::default_generation_settings()
@@ -142,6 +150,7 @@ namespace Voxel
     {
         Chunk *pChunk = memnew(Chunk);
         pChunk->set_world_position(this, x, y);
+        pChunk->set_pallet(m_pallet);
 
         m_chunks.emplace(Tools::Hash::chunk(pChunk), pChunk);
 
@@ -155,7 +164,7 @@ namespace Voxel
 
     void World::build_spawn()
     {
-        Tools::Log::debug() << "Building spawn (" << m_spawnRadius * m_spawnRadius << " chunks).";
+        Tools::Log::debug() << "Building spawn...";
 
         uint32_t count = 0;
         auto L = CHUNK_AXIS_LENGTH_U;

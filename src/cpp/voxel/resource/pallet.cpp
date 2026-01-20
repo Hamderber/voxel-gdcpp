@@ -1,0 +1,72 @@
+#include "hpp/voxel/resource/pallet.hpp"
+#include "hpp/tools/log_stream.hpp"
+#include "hpp/tools/material.hpp"
+
+using namespace godot;
+
+namespace Voxel::Resource
+{
+    void Pallet::_bind_methods()
+    {
+        ClassDB::bind_method(D_METHOD("get_material", "type"), &Pallet::get_material);
+
+        // Optional: expose named constants so GDScript can do pallet.get_material(Pallet.TYPE_GENERIC)
+        BIND_CONSTANT(TYPE_UNKNOWN);
+        BIND_CONSTANT(TYPE_GENERIC);
+        BIND_CONSTANT(TYPE_GLASS);
+        BIND_CONSTANT(TYPE_METAL);
+        BIND_CONSTANT(TYPE_COUNT);
+
+        ClassDB::bind_method(D_METHOD("get_unknown_material"), &Pallet::get_unknown_material);
+        ClassDB::bind_method(D_METHOD("set_unknown_material", "m"), &Pallet::set_unknown_material);
+        ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "unknown_material", PROPERTY_HINT_RESOURCE_TYPE, "StandardMaterial3D"),
+                     "set_unknown_material", "get_unknown_material");
+
+        ClassDB::bind_method(D_METHOD("get_generic_material"), &Pallet::get_generic_material);
+        ClassDB::bind_method(D_METHOD("set_generic_material", "m"), &Pallet::set_generic_material);
+        ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "generic_material", PROPERTY_HINT_RESOURCE_TYPE, "StandardMaterial3D"),
+                     "set_generic_material", "get_generic_material");
+
+        ClassDB::bind_method(D_METHOD("get_glass_material"), &Pallet::get_glass_material);
+        ClassDB::bind_method(D_METHOD("set_glass_material", "m"), &Pallet::set_glass_material);
+        ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "glass_material", PROPERTY_HINT_RESOURCE_TYPE, "StandardMaterial3D"),
+                     "set_glass_material", "get_glass_material");
+
+        ClassDB::bind_method(D_METHOD("get_metal_material"), &Pallet::get_metal_material);
+        ClassDB::bind_method(D_METHOD("set_metal_material", "m"), &Pallet::set_metal_material);
+        ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "metal_material", PROPERTY_HINT_RESOURCE_TYPE, "StandardMaterial3D"),
+                     "set_metal_material", "get_metal_material");
+    }
+
+    Ref<StandardMaterial3D> Pallet::get_material(int p_type) const
+    {
+        if (p_type >= 0 && p_type < TYPE_COUNT)
+            return m_materials[p_type];
+
+        Tools::Log::error() << "Invalid material type:" << p_type;
+
+        return m_materials[TYPE_UNKNOWN];
+    }
+
+    void Pallet::default_pallet()
+    {
+        Tools::Material::EnsureDefaultMaterial(m_materials[TYPE_UNKNOWN], "Pallet");
+
+        m_materials[TYPE_GENERIC] = m_materials[TYPE_UNKNOWN]->duplicate();
+        m_materials[TYPE_GENERIC]->set_name("Generic");
+        m_materials[TYPE_GENERIC]->set_albedo(Color(1.f, 1.f, 1.f));
+
+        m_materials[TYPE_GLASS] = m_materials[TYPE_UNKNOWN]->duplicate();
+        m_materials[TYPE_GLASS]->set_name("Glass");
+        m_materials[TYPE_GLASS]->set_albedo(Color(.8f, .8f, .8f, .5f));
+        m_materials[TYPE_GLASS]->set_transparency(BaseMaterial3D::TRANSPARENCY_ALPHA);
+
+        m_materials[TYPE_METAL] = m_materials[TYPE_UNKNOWN]->duplicate();
+        m_materials[TYPE_METAL]->set_name("Metal");
+        m_materials[TYPE_METAL]->set_albedo(Color(1.f, 1.f, 1.f));
+        m_materials[TYPE_METAL]->set_metallic(1.f);
+
+        emit_changed();
+        Tools::Log::debug("Created default pallet.");
+    }
+} //namespace Voxel::Resource

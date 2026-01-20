@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://hn8dh5y3yq6a"]
+[gd_scene load_steps=11 format=3 uid="uid://hn8dh5y3yq6a"]
 
 [ext_resource type="Script" uid="uid://gscsivoywwwo" path="res://main.gd" id="1_ig7tw"]
 
@@ -15,10 +15,28 @@ sky = SubResource("Sky_0xm2m")
 tonemap_mode = 2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ig7tw"]
+resource_name = "Generic"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0xm2m"]
+resource_name = "Glass"
+transparency = 1
+albedo_color = Color(0.8, 0.8, 0.8, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h2yge"]
+resource_name = "Metal"
+metallic = 1.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1bvp3"]
 resource_name = "UNKNOWN_MATERIAL"
 albedo_color = Color(1, 0, 0.86, 1)
 
-[sub_resource type="GenerationSettings" id="GenerationSettings_0xm2m"]
+[sub_resource type="Pallet" id="Pallet_lquwl"]
+unknown_material = SubResource("StandardMaterial3D_1bvp3")
+generic_material = SubResource("StandardMaterial3D_ig7tw")
+glass_material = SubResource("StandardMaterial3D_0xm2m")
+metal_material = SubResource("StandardMaterial3D_h2yge")
+
+[sub_resource type="GenerationSettings" id="GenerationSettings_7mycd"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_ig7tw")
@@ -34,6 +52,5 @@ environment = SubResource("Environment_h2yge")
 transform = Transform3D(-0.8276883, 0.2155624, -0.5181361, 0, 0.92328405, 0.38411793, 0.56118816, 0.31792986, -0.76419145, -2.4047956, 21.186386, -6.9921007)
 
 [node name="World" type="World" parent="."]
-radius = 2
-voxel_material = SubResource("StandardMaterial3D_ig7tw")
-settings = SubResource("GenerationSettings_0xm2m")
+pallet = SubResource("Pallet_lquwl")
+settings = SubResource("GenerationSettings_7mycd")

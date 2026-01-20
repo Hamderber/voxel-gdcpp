@@ -2,11 +2,11 @@
 
 #include "block.hpp"
 #include "constants.hpp"
-#include "godot_cpp/classes/standard_material3d.hpp"
 #include "godot_cpp/variant/vector3.hpp"
 #include "godot_cpp/variant/vector3i.hpp"
 #include "hpp/tools/log_stream.hpp"
 #include "hpp/tools/string.hpp"
+#include "resource/pallet.hpp"
 #include <cstdint>
 #include <godot_cpp/classes/array_mesh.hpp>
 #include <godot_cpp/classes/material.hpp>
@@ -20,7 +20,6 @@ namespace Voxel
     class Chunk : public godot::Node3D
     {
         GDCLASS(Chunk, Node3D)
-
     public:
         Chunk() = default;
         ~Chunk() override = default;
@@ -28,6 +27,7 @@ namespace Voxel
         void _ready() override;
         void _exit_tree() override;
 
+        void set_pallet(godot::Ref<Resource::Pallet> p_pallet) { m_pallet = p_pallet; }
         void set_world_position(World *pWorld, int x, int y)
         {
             m_pWorld = pWorld;
@@ -50,8 +50,7 @@ namespace Voxel
         void generate_blocks();
 
     protected:
-        static void _bind_methods();
-
+        static void _bind_methods() {}
         void _notification(int p_what);
 
     private:
@@ -60,14 +59,11 @@ namespace Voxel
         void ensure_instance();
         void sync_instance_transform();
 
-        godot::Ref<godot::StandardMaterial3D> get_material() const;
-        void set_material(const godot::Ref<godot::StandardMaterial3D> &material);
-
         bool m_isInitialized = false;
 
         World *m_pWorld;
 
-        godot::Ref<godot::StandardMaterial3D> m_material;
+        godot::Ref<Resource::Pallet> m_pallet;
         godot::Ref<godot::ArrayMesh> m_mesh;
         godot::RID m_instance_rid;
 

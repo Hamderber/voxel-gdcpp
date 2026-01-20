@@ -11,6 +11,7 @@ namespace Tools
     class Material
     {
     public:
+        static const godot::Color get_unknown_color() { return godot::Color(1.f, 0.f, 0.86f); }
         static godot::Ref<godot::StandardMaterial3D> get_default_material()
         {
             if (!m_material.is_valid())
@@ -18,7 +19,7 @@ namespace Tools
                 godot::Ref<godot::StandardMaterial3D> mat3d;
 
                 mat3d.instantiate();
-                mat3d->set_albedo(godot::Color(1.f, 0.f, 0.86f));
+                mat3d->set_albedo(get_unknown_color());
                 mat3d->set_name("UNKNOWN_MATERIAL");
 
                 m_material = mat3d;
@@ -35,6 +36,7 @@ namespace Tools
                 return;
 
             p_material = get_default_material();
+            p_material->emit_changed();
 
             std::stringstream ss;
             ss << "Set material to default for " << p_objName << ".";

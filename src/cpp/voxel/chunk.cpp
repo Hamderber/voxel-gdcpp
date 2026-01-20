@@ -1,7 +1,6 @@
 #include "hpp/voxel/chunk.hpp"
 #include "godot_cpp/classes/random_number_generator.hpp"
 #include "hpp/tools/log_stream.hpp"
-#include "hpp/tools/material.hpp"
 #include "hpp/tools/string.hpp"
 #include "hpp/voxel/constants.hpp"
 #include "hpp/voxel/world.hpp"
@@ -19,19 +18,9 @@ using namespace godot;
 
 namespace Voxel
 {
-    void Chunk::_bind_methods()
-    {
-        ClassDB::bind_method(D_METHOD("get_material"), &Chunk::get_material);
-        ClassDB::bind_method(D_METHOD("set_material", "material"), &Chunk::set_material);
-
-        ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE, "Material"),
-                     "set_material", "get_material");
-    }
-
     void Chunk::_ready()
     {
         set_notify_transform(true);
-        Tools::Material::EnsureDefaultMaterial(m_material, "Chunk");
         initialize_block_data();
         ensure_instance();
         sync_instance_transform();
@@ -106,21 +95,6 @@ namespace Voxel
             return;
 
         rs->instance_set_transform(m_instance_rid, get_global_transform());
-    }
-
-    godot::Ref<godot::StandardMaterial3D> Chunk::get_material() const
-    {
-        return m_material;
-    }
-
-    void Chunk::set_material(const godot::Ref<godot::StandardMaterial3D> &material)
-    {
-        m_material = material;
-
-        if (m_mesh.is_valid() && m_mesh->get_surface_count() > 0)
-        {
-            m_mesh->surface_set_material(0, m_material);
-        }
     }
 
     static void add_face(
@@ -286,9 +260,11 @@ namespace Voxel
 
             m_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, arrays);
 
-            if (m_material.is_valid() && m_mesh->get_surface_count() > 0)
+            auto generic_material = m_pallet->get_generic_material();
+
+            if (generic_material.is_valid() && m_mesh->get_surface_count() > 0)
             {
-                m_mesh->surface_set_material(0, m_material);
+                m_mesh->surface_set_material(0, generic_material);
             }
         }
 

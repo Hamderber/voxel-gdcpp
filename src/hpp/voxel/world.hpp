@@ -1,11 +1,10 @@
 #pragma once
 
-#include "godot_cpp/classes/material.hpp"
 #include "godot_cpp/classes/random_number_generator.hpp"
-#include "godot_cpp/classes/standard_material3d.hpp"
 #include "godot_cpp/classes/timer.hpp"
 #include "hpp/voxel/chunk.hpp"
 #include "resource/generation_settings.hpp"
+#include "resource/pallet.hpp"
 #include <cstdint>
 #include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/classes/resource.hpp>
@@ -54,10 +53,10 @@ namespace Voxel
             request_rebuild();
         }
 
-        godot::Ref<godot::Material> get_material() const { return m_material; }
-        void set_material(const godot::Ref<godot::Material> &m)
+        godot::Ref<Resource::Pallet> get_pallet() const { return m_pallet; }
+        void set_pallet(const godot::Ref<Resource::Pallet> &p)
         {
-            m_material = m;
+            m_pallet = p;
             request_rebuild();
         }
 
@@ -77,6 +76,7 @@ namespace Voxel
         void set_generation_rng();
         void build_debounce_timer();
         void rebuild_debounce_timer();
+        void default_pallet();
         void default_generation_settings();
         void subscribe_to_signals();
 
@@ -92,7 +92,7 @@ namespace Voxel
         int32_t m_renderDistance = 6;
         int64_t m_seed = 8675309;
         int32_t m_spawnRadius = 3;
-        godot::Ref<godot::StandardMaterial3D> m_material;
+        godot::Ref<Resource::Pallet> m_pallet;
         godot::Ref<Resource::GenerationSettings> m_generationSettings;
         godot::Ref<godot::RandomNumberGenerator> m_worldGenRNG;
         bool m_dirty = true;

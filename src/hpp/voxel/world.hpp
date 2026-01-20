@@ -1,15 +1,19 @@
 #pragma once
 
 #include "godot_cpp/classes/material.hpp"
+#include "godot_cpp/classes/random_number_generator.hpp"
 #include "godot_cpp/classes/standard_material3d.hpp"
 #include "godot_cpp/classes/timer.hpp"
+#include "hpp/voxel/chunk.hpp"
 #include "resource/generation_settings.hpp"
+#include <cstdint>
 #include <godot_cpp/classes/node3d.hpp>
 #include <godot_cpp/classes/resource.hpp>
 #include <godot_cpp/classes/wrapped.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <hpp/tools/log.hpp>
+#include <unordered_map>
 
 namespace Voxel
 {
@@ -21,8 +25,6 @@ namespace Voxel
     class World : public godot::Node3D
     {
         GDCLASS(World, godot::Node3D)
-
-        static const int32_t MAX_RENDER_DISTANCE = 64;
 
     public:
         World() = default;
@@ -45,6 +47,13 @@ namespace Voxel
             request_rebuild();
         }
 
+        int32_t get_spawn_radius() const { return m_spawnRadius; }
+        void set_spawn_radius(int32_t s)
+        {
+            m_spawnRadius = godot::CLAMP(s, 1, 25);
+            request_rebuild();
+        }
+
         godot::Ref<godot::Material> get_material() const { return m_material; }
         void set_material(const godot::Ref<godot::Material> &m)
         {
@@ -59,10 +68,13 @@ namespace Voxel
             request_rebuild();
         }
 
+        godot::Ref<godot::RandomNumberGenerator> get_generation_rng() { return m_worldGenRNG; }
+
     protected:
         static void _bind_methods();
 
     private:
+        void set_generation_rng();
         void build_debounce_timer();
         void rebuild_debounce_timer();
         void default_generation_settings();
@@ -71,14 +83,20 @@ namespace Voxel
         void request_rebuild();
         void rebuild();
 
+        void build_spawn();
+        void generate_new_chunk(int x, int y);
+
         godot::Timer *m_pDebounceTimer;
         const double DEBOUNCE_DELAY = 1.5;
 
         int32_t m_renderDistance = 6;
-        int32_t m_chunkSize = 16;
         int64_t m_seed = 8675309;
+        int32_t m_spawnRadius = 3;
         godot::Ref<godot::StandardMaterial3D> m_material;
         godot::Ref<Resource::GenerationSettings> m_generationSettings;
+        godot::Ref<godot::RandomNumberGenerator> m_worldGenRNG;
         bool m_dirty = true;
+
+        std::unordered_map<uint64_t, Chunk *> m_chunks;
     };
 } //namespace Voxel

@@ -6,7 +6,7 @@
 /bin/
 
 # Ignore all bin folders inside test_project
-/test_project/**/bin/
+/voxelgdcpp/**/bin/
 
 # Ignore custom.py
 custom.py
@@ -18,7 +18,7 @@ compile_commands.json
 /gen/
 
 # Ignore inner license files (could be added when testing full_plugin_compilation zip)
-test_project/**/LICENSE*
+voxelgdcpp/**/LICENSE*
 
 # Binaries
 *.o
@@ -161,3 +161,6 @@ nbdist/
 *.orig
 *.old
 *.log
+
+# Images
+images/

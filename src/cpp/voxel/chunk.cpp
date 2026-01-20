@@ -1,7 +1,11 @@
 #include "hpp/voxel/chunk.hpp"
 #include "godot_cpp/classes/random_number_generator.hpp"
+#include "hpp/tools/log_stream.hpp"
 #include "hpp/tools/material.hpp"
-#include <cstdlib>
+#include "hpp/tools/string.hpp"
+#include "hpp/voxel/constants.hpp"
+#include "hpp/voxel/world.hpp"
+#include <cstdint>
 #include <godot_cpp/classes/mesh.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
@@ -10,16 +14,11 @@
 #include <godot_cpp/variant/aabb.hpp>
 #include <godot_cpp/variant/array.hpp>
 #include <godot_cpp/variant/color.hpp>
-#include <vector>
 
 using namespace godot;
 
 namespace Voxel
 {
-    // TODO: Split this apart and stop using a monolithic hello world chunk
-
-    static constexpr float CHUNK_AXIS_LENGTH = 16.f;
-
     void Chunk::_bind_methods()
     {
         ClassDB::bind_method(D_METHOD("get_material"), &Chunk::get_material);
@@ -32,9 +31,8 @@ namespace Voxel
     void Chunk::_ready()
     {
         set_notify_transform(true);
-        Tools::Material::EnsureDefaultMaterial(m_material, "HelloChunk");
-        m_rng.instantiate();
-        build_dummy_chunk_mesh();
+        Tools::Material::EnsureDefaultMaterial(m_material, "Chunk");
+        initialize_block_data();
         ensure_instance();
         sync_instance_transform();
     }
@@ -78,9 +76,24 @@ namespace Voxel
             return;
 
         m_instance_rid = pRenderingServer->instance_create2(m_mesh->get_rid(), scenario);
+        // RenderingServer::get_singleton()->instance_set_base(m_instance_rid, m_mesh->get_rid());
+        pRenderingServer->instance_set_custom_aabb(m_instance_rid, AABB(CHUNK_AAA(), CHUNK_BBB()));
+        pRenderingServer->instance_set_visible(m_instance_rid, true);
+    }
 
-        pRenderingServer->instance_set_custom_aabb(m_instance_rid, AABB(Vector3(0, 0, 0),
-                                                                        Vector3(CHUNK_AXIS_LENGTH, CHUNK_AXIS_LENGTH, CHUNK_AXIS_LENGTH)));
+    void Chunk::initialize_block_data()
+    {
+        m_pBlocks = std::make_unique<Block *[]>(CHUNK_BLOCK_COUNT_MAX);
+
+        // Don't just use zero-initialized because the world is the owner of when to actually build the chunk
+        for (uint32_t i{}; i < CHUNK_BLOCK_COUNT_MAX; i++)
+        {
+            auto block = new Block();
+            block->set_solid(false);
+            m_pBlocks[i] = block;
+        }
+
+        remesh();
     }
 
     void Chunk::sync_instance_transform()
@@ -104,7 +117,6 @@ namespace Voxel
     {
         m_material = material;
 
-        // If mesh already exists, apply immediately
         if (m_mesh.is_valid() && m_mesh->get_surface_count() > 0)
         {
             m_mesh->surface_set_material(0, m_material);
@@ -149,53 +161,78 @@ namespace Voxel
         indices.push_back(base_index + 2);
     }
 
-    void Chunk::build_dummy_chunk_mesh()
+    const Block *Chunk::get_block_at(godot::Vector3 p_pos)
     {
-        m_mesh.instantiate();
+        return get_block_at(p_pos.x, p_pos.y, p_pos.z);
+    }
+
+    const Block *Chunk::get_block_at(uint32_t x, uint32_t y, uint32_t z)
+    {
+        if (!m_pBlocks)
+        {
+            Tools::Log::error() << "Attempted to access block at "
+                                << Tools::String::xyz_to_string(x, y, z)
+                                << " but the chunk's block data wasn't initialized.";
+        }
+
+        return m_pBlocks[get_block_index_local(x, y, z)];
+    }
+
+    void Chunk::generate_blocks()
+    {
+        const uint32_t XZ = CHUNK_AXIS_LENGTH_U;
+        const uint32_t Y = CHUNK_HEIGHT_U;
+
+        auto rng = m_pWorld->get_generation_rng();
+        auto settings = m_pWorld->get_settings();
+        auto sea_level = settings->get_sea_level();
+
+        for (int y = 0; y < Y; y++)
+        {
+            for (int z = 0; z < XZ; z++)
+            {
+                for (int x = 0; x < XZ; x++)
+                {
+                    // 1/20 solid vs air at/below sea level, 1 / 100 above
+                    auto block = new Block();
+                    block->set_solid(rng->randi_range(1, y < sea_level ? 20 : 100) == 1);
+                    m_pBlocks[get_block_index_local(x, y, z)] = block;
+                }
+            }
+        }
+
+        Tools::Log::debug() << "(Re)generated blocks for chunk at " << Tools::String::to_string(m_pos) << ".";
+
+        remesh();
+    }
+
+    void Chunk::remesh()
+    {
+        if (m_mesh.is_valid() && m_mesh->get_surface_count() > 0)
+        {
+            m_mesh->clear_surfaces();
+        }
+        else
+        {
+            m_mesh.instantiate();
+        }
 
         PackedVector3Array vertices;
         PackedVector3Array vertex_normals;
         PackedVector2Array uvs;
         PackedInt32Array indices;
 
-        const int L = CHUNK_AXIS_LENGTH;
-        const size_t count = static_cast<size_t>(L) * static_cast<size_t>(L) * static_cast<size_t>(L);
+        const uint32_t XZ = CHUNK_AXIS_LENGTH_U;
+        const uint32_t Y = CHUNK_HEIGHT_U;
 
-        // 1) Randomly fill solids
-        std::vector<uint8_t> solid(count, 0);
-
-        auto idx_of = [L](int x, int y, int z) -> size_t
+        for (int y = 0; y < Y; y++)
         {
-            return static_cast<size_t>(x + L * (y + L * z));
-        };
-
-        for (int z = 0; z < L; ++z)
-        {
-            for (int y = 0; y < L; ++y)
+            for (int z = 0; z < XZ; z++)
             {
-                for (int x = 0; x < L; ++x)
+                for (int x = 0; x < XZ; x++)
                 {
-                    // 50/50 solid vs air
-                    solid[idx_of(x, y, z)] = (m_rng->randi_range(0, 1) != 0) ? 1 : 0;
-                }
-            }
-        }
-
-        auto is_solid = [&](int x, int y, int z) -> bool
-        {
-            if (x < 0 || x >= L || y < 0 || y >= L || z < 0 || z >= L)
-                return false;
-            return solid[idx_of(x, y, z)] != 0;
-        };
-
-        // 2) Emit only visible faces for solid voxels
-        for (int z = 0; z < L; ++z)
-        {
-            for (int y = 0; y < L; ++y)
-            {
-                for (int x = 0; x < L; ++x)
-                {
-                    if (!is_solid(x, y, z))
+                    auto block = get_block_at(x, y, z);
+                    if (!block || !block->is_solid())
                         continue;
 
                     const Vector3 o(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
@@ -212,33 +249,32 @@ namespace Voxel
                     const Vector3 p011 = o + Vector3(0, 1, 1);
 
                     // +Z (front)
-                    if (z == L - 1 || !is_solid(x, y, z + 1))
+                    if (z == XZ - 1 || !get_block_at(x, y, z + 1)->is_solid())
                         add_face(vertices, vertex_normals, uvs, indices, p001, p101, p111, p011, Vector3(0, 0, 1));
 
                     // -Z (back)
-                    if (z == 0 || !is_solid(x, y, z - 1))
+                    if (z == 0 || !get_block_at(x, y, z - 1)->is_solid())
                         add_face(vertices, vertex_normals, uvs, indices, p100, p000, p010, p110, Vector3(0, 0, -1));
 
                     // +X (right)
-                    if (x == L - 1 || !is_solid(x + 1, y, z))
+                    if (x == XZ - 1 || !get_block_at(x + 1, y, z)->is_solid())
                         add_face(vertices, vertex_normals, uvs, indices, p101, p100, p110, p111, Vector3(1, 0, 0));
 
                     // -X (left)
-                    if (x == 0 || !is_solid(x - 1, y, z))
+                    if (x == 0 || !get_block_at(x - 1, y, z)->is_solid())
                         add_face(vertices, vertex_normals, uvs, indices, p000, p001, p011, p010, Vector3(-1, 0, 0));
 
                     // +Y (top)
-                    if (y == L - 1 || !is_solid(x, y + 1, z))
+                    if (y == Y - 1 || !get_block_at(x, y + 1, z)->is_solid())
                         add_face(vertices, vertex_normals, uvs, indices, p011, p111, p110, p010, Vector3(0, 1, 0));
 
                     // -Y (bottom)
-                    if (y == 0 || !is_solid(x, y - 1, z))
+                    if (y == 0 || !get_block_at(x, y - 1, z)->is_solid())
                         add_face(vertices, vertex_normals, uvs, indices, p000, p100, p101, p001, Vector3(0, -1, 0));
                 }
             }
         }
 
-        // 3) Build mesh (guard: could be empty)
         if (indices.size() > 0)
         {
             Array arrays;
@@ -250,7 +286,28 @@ namespace Voxel
 
             m_mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, arrays);
 
-            m_mesh->surface_set_material(0, m_material);
+            if (m_material.is_valid() && m_mesh->get_surface_count() > 0)
+            {
+                m_mesh->surface_set_material(0, m_material);
+            }
+        }
+
+        if (m_instance_rid.is_valid())
+        {
+            auto rs = RenderingServer::get_singleton();
+            rs->instance_set_base(m_instance_rid, m_mesh->get_rid());
+            rs->instance_set_visible(m_instance_rid, true);
+        }
+
+        if (m_mesh.is_valid() && m_mesh->get_surface_count() > 0)
+        {
+            Tools::Log::debug() << "Mesh has " << m_mesh->get_surface_count()
+                                << " surfaces and " << m_mesh->surface_get_array_len(0) << " vertices "
+                                << "for chunk" << Tools::String::to_string(m_pos);
+        }
+        else
+        {
+            Tools::Log::debug() << "Mesh is empty for chunk " << Tools::String::to_string(m_pos) << ".";
         }
     }
 } //namespace Voxel

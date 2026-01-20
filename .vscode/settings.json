@@ -99,7 +99,7 @@
     "LICENSE": true,
     "README.md": false,
     "SConstruct": true,
-    ".gitignore": true,
+    ".gitignore": false,
     ".github": true,
     "godot-cpp": true,
     "setup.py": false

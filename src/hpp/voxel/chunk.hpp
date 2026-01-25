@@ -55,10 +55,7 @@ namespace Voxel
 
         Neighbors get_neighbors();
 
-        void mesh_lock() { m_mesh_locked = true; }
-        void mesh_unlock() { m_mesh_locked = false; }
-        bool mesh_locked() const { return m_mesh_locked; }
-        void remesh();
+        godot::Ref<godot::ArrayMesh> &get_mesh() { return m_mesh; }
         void remesh_neighbors();
 
     protected:
@@ -80,8 +77,5 @@ namespace Voxel
 
         ChunkPos m_chunk_pos;
         std::unique_ptr<Voxel::Block *[]> m_pBlocks;
-        // The mesh starts locked so that the chunk isnt meshed until its neighbors are available during spawn generation.
-        // Initial mesh creation still happens, though remeshing is prevented until the mesh is unlocked
-        bool m_mesh_locked = true;
     };
 } //namespace Voxel

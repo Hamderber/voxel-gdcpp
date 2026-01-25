@@ -10,8 +10,11 @@
 #include "hpp/tools/log.hpp"
 #include "hpp/tools/log_stream.hpp"
 #include "hpp/tools/string.hpp"
+#include "hpp/voxel/chunk.hpp"
+#include "hpp/voxel/chunk_mesher.hpp"
 #include "hpp/voxel/constants.hpp"
 #include <cstdint>
+#include <sstream>
 
 using namespace godot;
 
@@ -181,32 +184,29 @@ namespace Voxel
     {
         Tools::Log::debug() << "Building spawn...";
 
+        ChunkMesher::debug_start_mesh_count();
+
         uint32_t count = 0;
 
-        for (int x = -m_spawnRadius; x < m_spawnRadius; x++)
+        std::stringstream ss;
+        ss << "Created chunks: ";
+
+        for (int x = -m_spawnRadius; x <= m_spawnRadius; x++)
         {
-            for (int z = -m_spawnRadius; z < m_spawnRadius; z++)
+            for (int z = -m_spawnRadius; z <= m_spawnRadius; z++)
             {
+                auto chunk_pos = Chunk::ChunkPos(x, z);
+                ss << Tools::String::to_string(chunk_pos) << " ";
                 generate_new_chunk(x, z);
                 count++;
             }
         }
 
-        Tools::Log::debug() << "Remeshing generated chunks..";
+        Tools::Log::debug() << ss.str();
 
-        for (int x = -m_spawnRadius; x < m_spawnRadius; x++)
-        {
-            for (int z = -m_spawnRadius; z < m_spawnRadius; z++)
-            {
-                auto chunk = try_get_chunk(Vector2i(x, z));
-
-                if (chunk)
-                {
-                    chunk->mesh_unlock();
-                    chunk->remesh();
-                }
-            }
-        }
+        Tools::Log::debug() << "(Re)meshing generated chunks...";
+        ChunkMesher::mesh_dequeue(ChunkMesher::DEQUEUE_BATCH_ALL);
+        Tools::Log::debug() << "Finished spawn chunk meshing. " << ChunkMesher::debug_end_mesh_count() << " mesh(es) were generated.";
 
         Tools::Log::debug() << "Spawn complete. " << count << " chunks generated.";
     }

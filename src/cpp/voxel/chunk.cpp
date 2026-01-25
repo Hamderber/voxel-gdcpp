@@ -85,7 +85,7 @@ namespace Voxel
             m_pBlocks[i] = block;
         }
 
-        ChunkMesher::create_mesh(this, m_mesh);
+        ChunkMesher::create_mesh(this);
     }
 
     void Chunk::set_world_position(World *pWorld, int x, int z)
@@ -166,16 +166,8 @@ namespace Voxel
 
         Tools::Log::debug() << "(Re)generated blocks for chunk at " << Tools::String::to_string(m_chunk_pos) << ".";
 
-        ChunkMesher::create_mesh(this, m_mesh);
+        ChunkMesher::mesh_queue(this);
         remesh_neighbors();
-    }
-
-    void Chunk::remesh()
-    {
-        if (mesh_locked())
-            return;
-
-        ChunkMesher::create_mesh(this, m_mesh);
     }
 
     Chunk::Neighbors Chunk::get_neighbors()
@@ -205,15 +197,15 @@ namespace Voxel
         auto neighbors = get_neighbors();
 
         if (neighbors.pos_x)
-            neighbors.pos_x->remesh();
+            ChunkMesher::mesh_queue(neighbors.pos_x);
 
         if (neighbors.neg_x)
-            neighbors.neg_x->remesh();
+            ChunkMesher::mesh_queue(neighbors.neg_x);
 
         if (neighbors.pos_z)
-            neighbors.pos_z->remesh();
+            ChunkMesher::mesh_queue(neighbors.pos_z);
 
         if (neighbors.neg_z)
-            neighbors.neg_z->remesh();
+            ChunkMesher::mesh_queue(neighbors.neg_z);
     }
 } //namespace Voxel

@@ -1,13 +1,15 @@
 #pragma once
 
-#include "godot_cpp/classes/array_mesh.hpp"
-#include "godot_cpp/classes/ref.hpp"
+#include "godot_cpp/variant/packed_int32_array.hpp"
+#include "godot_cpp/variant/packed_vector2_array.hpp"
 #include "godot_cpp/variant/packed_vector3_array.hpp"
 #include "godot_cpp/variant/vector3.hpp"
-#include "hpp/voxel/chunk.hpp"
+#include <cstdint>
 
 namespace Voxel
 {
+    class Chunk;
+
     class ChunkMesher
     {
     public:
@@ -46,6 +48,22 @@ namespace Voxel
             const FacePoints neg_y() { return { p000, p100, p101, p001 }; }
         };
 
-        static void create_mesh(Chunk *p_chunk, godot::Ref<godot::ArrayMesh> &p_mesh);
+        enum DequeueQuantity
+        {
+            DEQUEUE_BATCH_SMALL = 1,
+            DEQUEUE_BATCH_LARGE = 5,
+            DEQUEUE_BATCH_ALL
+        };
+
+        static void create_mesh(Chunk *p_chunk);
+
+        static void debug_start_mesh_count();
+        static uint32_t debug_end_mesh_count();
+
+        static void on_chunk_unload(Chunk *p_chunk);
+
+        static void mesh_queue(Chunk *p_chunk);
+        static void mesh_dequeue(DequeueQuantity p_quantity);
     };
+
 } //namespace Voxel

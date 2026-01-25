@@ -5,6 +5,7 @@
 #include "hpp/voxel/block.hpp"
 #include "hpp/voxel/constants.hpp"
 #include "hpp/voxel/world.hpp"
+#include <immintrin.h>
 #include <cstdint>
 #include <godot_cpp/classes/mesh.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
@@ -14,6 +15,8 @@
 #include <godot_cpp/variant/aabb.hpp>
 #include <godot_cpp/variant/array.hpp>
 #include <godot_cpp/variant/color.hpp>
+#include <sstream>
+#include <unordered_set>
 
 using namespace godot;
 using namespace Voxel::Resource;
@@ -26,6 +29,19 @@ namespace Voxel
     static uint32_t num_faces = 0;
     static uint32_t num_faces_skipped = 0;
 #endif
+
+    static uint32_t mesh_count = 0;
+    static std::unordered_set<Chunk *> mesh_queue_set;
+
+    void ChunkMesher::debug_start_mesh_count()
+    {
+        mesh_count = 0;
+    }
+
+    uint32_t ChunkMesher::debug_end_mesh_count()
+    {
+        return mesh_count;
+    }
 
     static void add_face(
             PackedVector3Array &vertices,
@@ -129,8 +145,17 @@ namespace Voxel
         }
     }
 
-    void ChunkMesher::create_mesh(Chunk *p_chunk, godot::Ref<godot::ArrayMesh> &p_mesh)
+    void ChunkMesher::create_mesh(Chunk *p_chunk)
     {
+        godot::Ref<godot::ArrayMesh> &p_mesh = p_chunk->get_mesh();
+
+        if (!p_mesh.is_valid())
+        {
+            p_mesh.instantiate();
+            return;
+        }
+
+        mesh_count++;
 #ifdef DEBUG_VERBOSE
         num_faces = 0;
         num_faces_skipped = 0;
@@ -138,10 +163,6 @@ namespace Voxel
         if (p_mesh.is_valid() && p_mesh->get_surface_count() > 0)
         {
             p_mesh->clear_surfaces();
-        }
-        else
-        {
-            p_mesh.instantiate();
         }
 
         SurfaceData data[Pallet::TYPE_COUNT];
@@ -254,6 +275,54 @@ namespace Voxel
                                 << Tools::String::to_string(chunk_pos) << ". "
                                 << num_faces_skipped << " face(s) were skipped due to neighboring chunk's block being opaque.";
         }
+#endif
+    }
+
+    void ChunkMesher::on_chunk_unload(Chunk *p_chunk)
+    {
+        mesh_queue_set.erase(p_chunk);
+    }
+
+    void ChunkMesher::mesh_queue(Chunk *p_chunk)
+    {
+        mesh_queue_set.emplace(p_chunk);
+    }
+
+    void ChunkMesher::mesh_dequeue(ChunkMesher::DequeueQuantity p_quantity)
+    {
+        int batch_size = p_quantity == ChunkMesher::DEQUEUE_BATCH_ALL ? mesh_queue_set.size() : static_cast<int>(p_quantity);
+
+#ifdef DEBUG_VERBOSE
+        int iteration_count = 0;
+        std::stringstream ss;
+        ss << "Chunks remeshed: ";
+#endif
+        size_t remesh_count{};
+
+        for (auto chunk : mesh_queue_set)
+        {
+#ifdef DEBUG_VERBOSE
+            iteration_count++;
+#endif
+            if (!chunk)
+                continue;
+
+            create_mesh(chunk);
+
+#ifdef DEBUG_VERBOSE
+            auto chunk_pos = chunk->get_pos();
+            ss << Tools::String::to_string(chunk_pos) << " ";
+#endif
+
+            remesh_count++;
+            if (remesh_count == batch_size)
+                break;
+        }
+
+#ifdef DEBUG_VERBOSE
+        Tools::Log::debug() << "(Chunk mesher) remeshed " << remesh_count
+                            << " after checking " << iteration_count << " chunks. The batch size was " << batch_size << ".";
+        Tools::Log::debug() << ss.str();
 #endif
     }
 } //namespace Voxel

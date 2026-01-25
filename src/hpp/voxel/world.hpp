@@ -53,7 +53,7 @@ namespace Voxel
         int32_t get_spawn_radius() const { return m_spawnRadius; }
         void set_spawn_radius(int32_t s)
         {
-            m_spawnRadius = godot::CLAMP(s, 1, 25);
+            m_spawnRadius = godot::CLAMP(s, 1, 3);
             request_rebuild();
         }
 
@@ -86,8 +86,8 @@ namespace Voxel
             }
             else
             {
-                Tools::Log::warn() << "Attempted to get chunk at " << Tools::String::to_string(p_chunkPos)
-                                   << " but it was not part of the world's map.";
+                // Tools::Log::warn() << "Attempted to get chunk at " << Tools::String::to_string(p_chunkPos)
+                //                    << " but it was not part of the world's map.";
                 return nullptr;
             }
         }

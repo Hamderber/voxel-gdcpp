@@ -7,16 +7,6 @@ namespace Voxel
     class Block
     {
     public:
-        // enum Face
-        // {
-        //     FACE_Z_POS = 0,
-        //     FACE_Z_NEG,
-        //     FACE_X_POS,
-        //     FACE_X_NEG,
-        //     FACE_Y_POS,
-        //     FACE_Y_NEG,
-        // };
-
         Block() = default;
         ~Block() = default;
 

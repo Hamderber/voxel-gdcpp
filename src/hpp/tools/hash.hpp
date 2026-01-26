@@ -17,7 +17,9 @@ namespace Tools
 
         static const uint64_t chunk_pos(godot::Vector2i pos)
         {
-            return (static_cast<uint64_t>(pos.x) << 32 | static_cast<uint64_t>(pos.y));
+            // Must prevent UB from shifting signed integers. Otherwise keys aren't deterministic depending on what value is signed.
+            return (static_cast<uint64_t>(pos.x & 0xFFFFFFFFu) << 32) |
+                   (static_cast<uint64_t>(pos.y) & 0xFFFFFFFFu);
         }
     };
 } //namespace Tools

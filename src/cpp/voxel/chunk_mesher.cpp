@@ -17,6 +17,7 @@
 #include <godot_cpp/variant/color.hpp>
 #include <sstream>
 #include <unordered_set>
+#include <vector>
 
 using namespace godot;
 using namespace Voxel::Resource;
@@ -298,6 +299,8 @@ namespace Voxel
         ss << "Chunks remeshed: ";
 #endif
         size_t remesh_count{};
+        std::vector<Chunk *> remeshed_chunks;
+        remeshed_chunks.reserve(batch_size);
 
         for (auto chunk : mesh_queue_set)
         {
@@ -308,6 +311,7 @@ namespace Voxel
                 continue;
 
             create_mesh(chunk);
+            remeshed_chunks.emplace_back(chunk);
 
 #ifdef DEBUG_VERBOSE
             auto chunk_pos = chunk->get_pos();
@@ -319,9 +323,17 @@ namespace Voxel
                 break;
         }
 
+        for (auto chunk : remeshed_chunks)
+        {
+            if (chunk)
+                mesh_queue_set.erase(chunk);
+        }
+
 #ifdef DEBUG_VERBOSE
-        Tools::Log::debug() << "(Chunk mesher) remeshed " << remesh_count
-                            << " after checking " << iteration_count << " chunks. The batch size was " << batch_size << ".";
+        Tools::Log::debug()
+                << "(Chunk mesher) remeshed " << remesh_count
+                << " after checking " << iteration_count << " chunks. The batch size was " << batch_size << ". "
+                << "There are " << mesh_queue_set.size() << " chunks left in the queue.";
         Tools::Log::debug() << ss.str();
 #endif
     }

@@ -92,6 +92,9 @@ namespace Voxel
             }
         }
 
+        void unload_chunk(Chunk *p_chunk);
+        void unload_world();
+
     protected:
         static void _bind_methods();
 
@@ -106,7 +109,8 @@ namespace Voxel
         void request_rebuild();
         void rebuild();
 
-        void build_spawn();
+        void generate_spawn();
+        // void generate_spawn_rebuild();
         void generate_new_chunk(int x, int y);
 
         godot::Timer *m_pDebounceTimer;
@@ -120,7 +124,6 @@ namespace Voxel
         godot::Ref<Resource::Pallet> m_pallet;
         godot::Ref<Resource::GenerationSettings> m_generationSettings;
         godot::Ref<godot::RandomNumberGenerator> m_worldGenRNG;
-        bool m_dirty = true;
 
         std::unordered_map<uint64_t, Chunk *> m_chunks;
     };

@@ -208,4 +208,10 @@ namespace Voxel
         if (neighbors.neg_z)
             ChunkMesher::mesh_queue(neighbors.neg_z);
     }
+
+    void Chunk::unload()
+    {
+        ChunkMesher::on_chunk_unload(this);
+        Tools::Log::debug() << "Chunk " << Tools::String::to_string(m_chunk_pos) << " unloaded!";
+    }
 } //namespace Voxel

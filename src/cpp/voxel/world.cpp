@@ -26,16 +26,15 @@ namespace Voxel
     {
         default_pallet();
         default_generation_settings();
-        set_generation_rng();
         build_debounce_timer();
         subscribe_to_signals();
 
-        build_spawn();
+        generate_spawn();
     }
 
     void World::set_generation_rng()
     {
-        if (!m_worldGenRNG.is_valid())
+        if (m_worldGenRNG.is_null() || !m_worldGenRNG.is_valid())
         {
             m_worldGenRNG.instantiate();
         }
@@ -141,15 +140,8 @@ namespace Voxel
 
     void World::rebuild()
     {
-        // TODO: Un-dirty
-        m_dirty = true;
-
-        set_generation_rng();
-
-        for (auto chunk : m_chunks)
-        {
-            chunk.second->generate_blocks();
-        }
+        unload_world();
+        generate_spawn();
 
         Tools::Log::debug("World rebuild executed!");
     }
@@ -180,8 +172,10 @@ namespace Voxel
         pChunk->generate_blocks();
     }
 
-    void World::build_spawn()
+    void World::generate_spawn()
     {
+        set_generation_rng();
+
         Tools::Log::debug() << "Building spawn...";
 
         ChunkMesher::debug_start_mesh_count();
@@ -209,5 +203,29 @@ namespace Voxel
         Tools::Log::debug() << "Finished spawn chunk meshing. " << ChunkMesher::debug_end_mesh_count() << " mesh(es) were generated.";
 
         Tools::Log::debug() << "Spawn complete. " << count << " chunks generated.";
+    }
+
+    void World::unload_chunk(Chunk *p_chunk)
+    {
+        if (p_chunk)
+        {
+            p_chunk->unload();
+            remove_child(p_chunk);
+            m_chunks.erase(Tools::Hash::chunk(p_chunk));
+            memdelete(p_chunk);
+        }
+    }
+
+    void World::unload_world()
+    {
+        int count = 0;
+        while (!m_chunks.empty())
+        {
+            auto kvp = m_chunks.begin();
+            unload_chunk(kvp->second);
+            count++;
+        }
+
+        Tools::Log::debug() << "Unloaded " << count << " chunk(s) during world " << this << " unload.";
     }
 } //namespace Voxel

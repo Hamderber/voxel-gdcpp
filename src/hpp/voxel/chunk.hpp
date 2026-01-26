@@ -58,6 +58,8 @@ namespace Voxel
         godot::Ref<godot::ArrayMesh> &get_mesh() { return m_mesh; }
         void remesh_neighbors();
 
+        void unload();
+
     protected:
         static void _bind_methods() {}
         void _notification(int p_what);
